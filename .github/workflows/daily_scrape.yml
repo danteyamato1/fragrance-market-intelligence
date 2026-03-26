@@ -1,0 +1,43 @@
+name: Daily Fragrance Scrape
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Mode"
+        required: true
+        default: "fragrantica-only"
+        type: choice
+        options: [fragrantica-only, full, amazon-only, test]
+concurrency:
+  group: daily-scrape
+  cancel-in-progress: false
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - run: mkdir -p raw_data cleaned_data
+      - name: Run pipeline
+        run: |
+          MODE="${{ github.event.inputs.mode || 'fragrantica-only' }}"
+          if [ "$MODE" = "test" ]; then python daily_scraper.py --test
+          elif [ "$MODE" = "fragrantica-only" ]; then python daily_scraper.py --fragrantica-only
+          elif [ "$MODE" = "amazon-only" ]; then python daily_scraper.py --amazon-only
+          else python daily_scraper.py
+          fi
+      - name: Commit data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add raw_data/*.csv cleaned_data/*.csv *.db 2>/dev/null || true
+          if git diff --staged --quiet; then echo "No new data"
+          else git commit -m "daily scrape: $(date -u +%Y-%m-%d)" && git push; fi

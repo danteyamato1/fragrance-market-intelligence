@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+venv/
+raw_data/_progress.json
+*.db
