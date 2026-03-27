@@ -1,0 +1,11 @@
+scrape_date,name,brand,category,country,currency,price,price_eur,bottle_size_ml,price_per_ml,amazon_rating,amazon_reviews,availability,amazon_url
+2026-03-27,Sauvage,Dior,designer,UK,GBP,,,100.0,,,,http_503,https://www.amazon.co.uk/s?k=Dior+Sauvage+100ml
+2026-03-27,Sauvage,Dior,designer,UAE,AED,,,100.0,,4.5,,unavailable,https://www.amazon.ae/s?k=Dior+Sauvage+100ml
+2026-03-27,Sauvage Elixir,Dior,designer,UK,GBP,,,100.0,,,,http_503,https://www.amazon.co.uk/s?k=Dior+Sauvage+Elixir+60ml
+2026-03-27,Sauvage Elixir,Dior,designer,UAE,AED,550.0,137.5,100.0,1.375,4.6,,in_stock,https://www.amazon.ae/s?k=Dior+Sauvage+Elixir+60ml
+2026-03-27,Sauvage EDP,Dior,designer,UK,GBP,,,100.0,,,,http_503,https://www.amazon.co.uk/s?k=Dior+Sauvage+Eau+de+Parfum+100ml
+2026-03-27,Sauvage EDP,Dior,designer,UAE,AED,,,100.0,,,,http_503,https://www.amazon.ae/s?k=Dior+Sauvage+Eau+de+Parfum+100ml
+2026-03-27,Oud Ispahan,Dior,designer,UK,GBP,,,100.0,,,,http_503,https://www.amazon.co.uk/s?k=Dior+Oud+Ispahan+125ml
+2026-03-27,Oud Ispahan,Dior,designer,UAE,AED,1295.0,323.75,100.0,3.2375,3.5,,in_stock,https://www.amazon.ae/s?k=Dior+Oud+Ispahan+125ml
+2026-03-27,Fahrenheit,Dior,designer,UK,GBP,,,100.0,,,,http_503,https://www.amazon.co.uk/s?k=Dior+Fahrenheit+100ml
+2026-03-27,Fahrenheit,Dior,designer,UAE,AED,,,100.0,,,,http_503,https://www.amazon.ae/s?k=Dior+Fahrenheit+100ml

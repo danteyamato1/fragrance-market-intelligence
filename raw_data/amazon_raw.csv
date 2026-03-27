@@ -1,0 +1,11 @@
+scrape_date,country,currency,price_raw,bottle_size_raw,amazon_rating_raw,amazon_reviews_raw,availability,amazon_title_raw,amazon_url,name,brand,category
+2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+100ml,Sauvage,Dior,designer
+2026-03-27,UAE,AED,,,"4.5 out of 5 stars, rating details",,unavailable,,https://www.amazon.ae/s?k=Dior+Sauvage+100ml,Sauvage,Dior,designer
+2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+Elixir+60ml,Sauvage Elixir,Dior,designer
+2026-03-27,UAE,AED,AED 550.00,,"4.6 out of 5 stars, rating details",,in_stock,,https://www.amazon.ae/s?k=Dior+Sauvage+Elixir+60ml,Sauvage Elixir,Dior,designer
+2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+Eau+de+Parfum+100ml,Sauvage EDP,Dior,designer
+2026-03-27,UAE,AED,,,,,http_503,,https://www.amazon.ae/s?k=Dior+Sauvage+Eau+de+Parfum+100ml,Sauvage EDP,Dior,designer
+2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Oud+Ispahan+125ml,Oud Ispahan,Dior,designer
+2026-03-27,UAE,AED,"AED 1,295.00",,"3.5 out of 5 stars, rating details",,in_stock,,https://www.amazon.ae/s?k=Dior+Oud+Ispahan+125ml,Oud Ispahan,Dior,designer
+2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Fahrenheit+100ml,Fahrenheit,Dior,designer
+2026-03-27,UAE,AED,,,,,http_503,,https://www.amazon.ae/s?k=Dior+Fahrenheit+100ml,Fahrenheit,Dior,designer

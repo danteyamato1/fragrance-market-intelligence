@@ -1,0 +1,4 @@
+price_band,count,pct,gap_status
+luxury,1,10.0,adequate
+premium,1,10.0,adequate
+unknown,8,80.0,adequate
