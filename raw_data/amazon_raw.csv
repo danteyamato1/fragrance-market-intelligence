@@ -1,11 +1,11 @@
-scrape_date,country,currency,price_raw,bottle_size_raw,amazon_rating_raw,amazon_reviews_raw,availability,amazon_title_raw,amazon_url,name,brand,category
-2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+100ml,Sauvage,Dior,designer
-2026-03-27,UAE,AED,,,"4.5 out of 5 stars, rating details",,unavailable,,https://www.amazon.ae/s?k=Dior+Sauvage+100ml,Sauvage,Dior,designer
-2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+Elixir+60ml,Sauvage Elixir,Dior,designer
-2026-03-27,UAE,AED,AED 550.00,,"4.6 out of 5 stars, rating details",,in_stock,,https://www.amazon.ae/s?k=Dior+Sauvage+Elixir+60ml,Sauvage Elixir,Dior,designer
-2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Sauvage+Eau+de+Parfum+100ml,Sauvage EDP,Dior,designer
-2026-03-27,UAE,AED,,,,,http_503,,https://www.amazon.ae/s?k=Dior+Sauvage+Eau+de+Parfum+100ml,Sauvage EDP,Dior,designer
-2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Oud+Ispahan+125ml,Oud Ispahan,Dior,designer
-2026-03-27,UAE,AED,"AED 1,295.00",,"3.5 out of 5 stars, rating details",,in_stock,,https://www.amazon.ae/s?k=Dior+Oud+Ispahan+125ml,Oud Ispahan,Dior,designer
-2026-03-27,UK,GBP,,,,,http_503,,https://www.amazon.co.uk/s?k=Dior+Fahrenheit+100ml,Fahrenheit,Dior,designer
-2026-03-27,UAE,AED,,,,,http_503,,https://www.amazon.ae/s?k=Dior+Fahrenheit+100ml,Fahrenheit,Dior,designer
+﻿scrape_date,country,currency,price_raw,bottle_size_raw,amazon_rating_raw,amazon_reviews_raw,availability,amazon_title_raw,amazon_url,name,brand,category
+2026-03-31,USA,USD,$149.99,Sauvage Parfum Spray for Men 3.4 Ounces,"4.5 out of 5 stars, rating details",,in_stock,Sauvage Parfum Spray for Men 3.4 Ounces,https://www.amazon.com/s?k=Dior+Sauvage&currency=USD,Sauvage,Dior,designer
+2026-03-31,UAE,AED,AED 391.85,"Christian Dior Sauvage Eau De Toilette Spray For Men, 100ml","4.5 out of 5 stars, rating details",,in_stock,"Christian Dior Sauvage Eau De Toilette Spray For Men, 100ml",https://www.amazon.ae/s?k=Dior+Sauvage+100ml,Sauvage,Dior,designer
+2026-03-31,USA,USD,,,,,not_on_marketplace,,https://www.amazon.com/s?k=Dior+Sauvage+Elixir&currency=USD,Sauvage Elixir,Dior,designer
+2026-03-31,UAE,AED,AED749.5,Christian Dior Dior Sauvage Elixir M Edp 100ml,"4.6 out of 5 stars, rating details",,in_stock,Christian Dior Dior Sauvage Elixir M Edp 100ml,https://www.amazon.ae/s?k=Dior+Sauvage+Elixir+100ml,Sauvage Elixir,Dior,designer
+2026-03-31,USA,USD,$149.99,Sauvage Parfum Spray for Men 3.4 Ounces,"4.5 out of 5 stars, rating details",,in_stock,Sauvage Parfum Spray for Men 3.4 Ounces,https://www.amazon.com/s?k=Dior+Sauvage+Parfum&currency=USD,Sauvage EDP,Dior,designer
+2026-03-31,UAE,AED,AED 543.00,"Dior Sauvage Eau de Parfum For Men, 100 ml","4.4 out of 5 stars, rating details",,in_stock,"Dior Sauvage Eau de Parfum For Men, 100 ml",https://www.amazon.ae/s?k=Dior+Sauvage+Parfum+100ml,Sauvage EDP,Dior,designer
+2026-03-31,USA,USD,,,,,not_on_marketplace,,https://www.amazon.com/s?k=Dior+Oud+Ispahan&currency=USD,Oud Ispahan,Dior,designer
+2026-03-31,UAE,AED,AED1295.0,"Christian Dior Perfume Oud Ispahan for Unisex Eau de Parfum, 125ml","3.5 out of 5 stars, rating details",,in_stock,"Christian Dior Perfume Oud Ispahan for Unisex Eau de Parfum, 125ml",https://www.amazon.ae/s?k=Dior+Oud+Ispahan+125ml,Oud Ispahan,Dior,designer
+2026-03-31,USA,USD,,,,,not_on_marketplace,,https://www.amazon.com/s?k=Dior+Fahrenheit&currency=USD,Fahrenheit,Dior,designer
+2026-03-31,UAE,AED,AED369.0,"Perfume - Fahrenheit by Christian Dior - perfume for men - Eau de Toilette, 100ml","4.6 out of 5 stars, rating details",,in_stock,"Perfume - Fahrenheit by Christian Dior - perfume for men - Eau de Toilette, 100ml",https://www.amazon.ae/s?k=Dior+Fahrenheit+100ml,Fahrenheit,Dior,designer
