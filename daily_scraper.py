@@ -135,10 +135,10 @@ def main():
     finally:
         conn.close()
 
-    logger.info("--- Running analysis ---")
+    logger.info("Running analysis...........")
     run_analysis(features_df)
 
-    logger.info("--- Building HTML report ---")
+    logger.info("Building HTML report..............")
     try:
         report_path = build_report(today)
         if report_path:
