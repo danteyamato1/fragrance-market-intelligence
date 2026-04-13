@@ -1,23 +1,20 @@
-
 name: Daily Fragrance Scrape
 
 on:
-
   schedule:
-    - cron: "0 6 * * *"
-
+    - cron: "0 6 * * *"    # 06:00 UTC every day
   workflow_dispatch:
     inputs:
       mode:
-        description: "Choose scraping mode"
+        description: "Pipeline mode"
         required: true
         default: "fragrantica-only"
         type: choice
         options:
-          - fragrantica-only 
-          - full            
-          - demo         
-
+          - fragrantica-only
+          - full
+          - amazon-only
+          - test
 
 concurrency:
   group: daily-scrape
@@ -26,67 +23,58 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-
-
+    timeout-minutes: 120
     permissions:
       contents: write
 
     steps:
-
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
-   
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-
-      - name: Install Playwright (if needed)
-        if: ${{ github.event.inputs.mode == 'full' }}
         run: |
-          pip install playwright
-          playwright install chromium
-          playwright install-deps chromium
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
 
-
-      - name: Create data directories
+      - name: Prepare data dirs
         run: mkdir -p raw_data cleaned_data
 
-
-      - name: Run daily scraper
+      - name: Run pipeline (scrape → clean → features → DB → analysis)
         run: |
           MODE="${{ github.event.inputs.mode || 'fragrantica-only' }}"
+          case "$MODE" in
+            test)             make scrape-test ;;
+            fragrantica-only) make scrape-frag ;;
+            amazon-only)      make scrape-amz ;;
+            full|*)           make scrape ;;
+          esac
 
-          if [ "$MODE" = "fragrantica-only" ]; then
-            python daily_scraper.py --fragrantica-only
-          elif [ "$MODE" = "full" ]; then
-            python daily_scraper.py
-          elif [ "$MODE" = "demo" ]; then
-            python daily_scraper.py --demo
-          fi
-
-      - name: Commit and push new data
+      - name: Commit updated data + database
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add raw_data/*.csv
-          git add cleaned_data/*.csv
-
-          # Only commit if there's something new
+          git add raw_data/*.csv cleaned_data/*.csv *.db fx_cache.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No new data to commit"
           else
-            DATE=$(date -u +"%Y-%m-%d")
-            git commit -m "daily scrape: ${DATE}"
+            git commit -m "daily scrape: $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      - name: Upload artefacts (for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-${{ github.run_id }}
+          path: |
+            cleaned_data/
+            fragrance_market.db
+          retention-days: 14
