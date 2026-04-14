@@ -79,7 +79,8 @@ jobs:
           if git diff --staged --quiet; then
             echo "No new data to commit"
           else
-            git commit -m "daily scrape: $(date -u +%Y-%m-%d)"
+            git commit -m "daily scrape: $(date -u +%Y-%m-%d)" || exit 0
+            git pull --rebase origin main
             git push
           fi
 
