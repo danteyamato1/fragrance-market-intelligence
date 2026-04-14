@@ -21,13 +21,11 @@ def try_fetch(label, extra_headers=None):
     html = resp.text
     soup = BeautifulSoup(html, "html.parser")
 
-    # Count key signals
     tn = html.count("tabular-nums")
     fci = html.count("flex-col items-center")
     dv  = html.count("data-v-643d6550")
     vue = html.count("likes-rating-new")
 
-    # Check if rating card has real content
     cards = soup.find_all(class_="tw-rating-card")
     card_blocks = 0
     for c in cards:
@@ -38,11 +36,10 @@ def try_fetch(label, extra_headers=None):
     print(f"  tw-rating-card count={len(cards)}  blocks-with-data={card_blocks}")
     return html, card_blocks > 0
 
-# default cloudscraper
 html, success = try_fetch("Default cloudscraper")
 
 if not success:
-    # Show where the 12 tabular-nums actually are
+
     print("\n[Locating existing tabular-nums spans in raw HTML]")
     soup = BeautifulSoup(html, "html.parser")
     for i, span in enumerate(soup.find_all("span", class_="tabular-nums")):
@@ -51,7 +48,6 @@ if not success:
         gp_classes = gp.get("class", []) if gp else []
         print(f"  [{i}] text={span.get_text(strip=True)!r:8} parent={parent_classes} grandparent={gp_classes[:3]}")
 
-# Add realistic browser headers
 _, success = try_fetch("With Accept + Language headers", {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
@@ -65,7 +61,6 @@ _, success = try_fetch("With Accept + Language headers", {
     "Sec-Fetch-User": "?1",
 })
 
-# With Referer (simulate coming from Fragrantica search)
 _, success = try_fetch("With Referer header", {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
@@ -75,7 +70,6 @@ _, success = try_fetch("With Referer header", {
     "Sec-Fetch-Site": "same-origin",
 })
 
-# requests (not cloudscraper) with full browser headers
 print("\n[Attempt 4: raw requests with full Chrome headers]")
 import requests
 headers = {
