@@ -45,7 +45,7 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Prepare data dirs
-        run: mkdir -p raw_data cleaned_data
+        run: mkdir -p raw_data cleaned_data docs
 
       - name: Run pipeline (scrape → clean → features → DB → analysis)
         run: |
@@ -57,11 +57,25 @@ jobs:
             full|*)           make scrape ;;
           esac
 
-      - name: Commit updated data + database
+      - name: Publish report to GitHub Pages
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          REPORT="cleaned_data/report_${TODAY}.html"
+
+          if [ -f "$REPORT" ]; then
+            mkdir -p docs
+            cp "$REPORT" docs/index.html
+            cp "$REPORT" "docs/report_${TODAY}.html"
+            echo "Published $REPORT to docs/"
+          else
+            echo "No report for ${TODAY} at ${REPORT} — skipping publish"
+          fi
+
+      - name: Commit updated data + database + report
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add raw_data/*.csv cleaned_data/*.csv *.db fx_cache.json 2>/dev/null || true
+          git add raw_data/*.csv cleaned_data/*.csv *.db fx_cache.json docs/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No new data to commit"
           else
