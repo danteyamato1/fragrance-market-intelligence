@@ -1,17 +1,11 @@
 """
-fx_rates.py - Live exchange rate fetching with caching
+Live exchange rate fetching with caching
 
 Replaces the hardcoded RATES_TO_EUR dict in transforms.py with live
 rates pulled from the European Central Bank's public reference feed.
 Rates are cached per-day so the pipeline doesn't hammer the API and
 every row in the database can be tagged with the exact rate that was
 used on the day of the scrape.
-
-Why ECB and not Wise/Xe/OANDA?
-------------------------------
-• Zero auth, no API key, no rate limit for reasonable use
-• Publicly auditable - the same data used by every European bank
-• Daily snapshot - matches our daily pipeline cadence
 """
 
 from __future__ import annotations
