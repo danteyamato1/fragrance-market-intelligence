@@ -1,15 +1,9 @@
-"""
-scrape_amazon.py — Scrapes Amazon UK + UAE prices using Playwright + stealth
-=============================================================================
-Uses playwright-stealth to hide headless Chromium fingerprints that Amazon's
-bot detection checks for (navigator.webdriver, missing plugins, etc.)
-
-Install:
-    pip install playwright playwright-stealth
-    playwright install chromium
-"""
-
-import re, time, random, json, os, logging
+import re
+import time
+import random
+import json
+import os
+import logging
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
@@ -18,464 +12,663 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("amazon")
 
 SITES = {
-    "USA": {"base_url": "https://www.amazon.com/s?k=", "currency": "USD"},
-    "UAE": {"base_url": "https://www.amazon.ae/s?k=",  "currency": "AED"},
+    "USA": {"domain": "https://www.amazon.com", "currency": "USD"},
+    "UAE": {"domain": "https://www.amazon.ae", "currency": "AED"},
 }
 
-# Amazon USA lists fragrances in fl oz — map common ml sizes to their US label
-ML_TO_FLOZ = {
-    10:  "0.33",
-    15:  "0.5",
-    20:  "0.67",
-    30:  "1.0",
-    40:  "1.35",
-    50:  "1.7",
-    60:  "2.0",
-    75:  "2.5",
-    80:  "2.7",
-    90:  "3.0",
-    100: "3.4",
-    125: "4.2",
-    150: "5.0",
-    200: "6.7",
-    250: "8.4",
+CHROME_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0.0.0 Safari/537.36"
+
+MIN_DELAY = 5
+MAX_DELAY = 10
+
+NON_FRAG_RE = re.compile(
+    r"\b("
+
+    r"roll[\s-]?on|roller|"
+    r"fragrance\s+oil|body\s+oil|perfume\s+oil|essential\s+oil|"
+    r"diffuser|reed\s+diffuser|"
+    r"inspired\s+by|our\s+impression|our\s+version|"
+    r"type\s+(of|for)|[\s-]type\b|"
+    r"dupe|clone|alternative|"
+    r"decant|sample|atomi[sz]er|"
+    r"gift\s+set|travel\s+size|mini(?:\s+set)?|"
+    r"refill|tester|"
+    r"body\s+wash|shower\s+gel|lotion|deodorant|aftershave|balm|"
+    r"candle|wax\s+melt|air\s+freshener|"
+    r"t[\s-]?shirt|hoodie|mug|poster|"
+ 
+
+    r"creations?\s+of|" 
+    r"\bm\s*&\s*h\b|musk\s*&\s*hustle|"
+    r"\d+\s*(in\s*\d+|original|pack|bundle|popular)|"
+    r"set\s+of\s+\d+|\d+\s+piece\s+set|"
+    r"variety\s+pack|sampler\s+set|discovery\s+set|"
+    r"comparable\s+to|similar\s+to|matches\s+the\s+scent|"
+    r"pure\s+oil\s+cologne|oil\s+cologne|"
+    r"fragrance\s+dupe|perfume\s+dupe"
+    r")\b",
+    re.IGNORECASE,
+)
+
+FRAG_BUNDLE_MARKERS = re.compile(
+    r"\baventus\b|\berolfa\b|\bimagination\b|\boud\s+wood\b|"
+    r"\btobacco\s+vanille\b|\bbaccarat\b|\bgreen\s+irish\s+tweed\b|"
+    r"\bsilver\s+mountain\b|\bmillesime\b|\bviking\b|"
+    r"\bneroli\s+savage\b|\bspice\s+\&?\s*wood\b",
+    re.IGNORECASE,
+)
+
+STOPWORDS = {
+    "the", "by", "for", "of", "and", "&", "eau", "de", "parfum",
+    "toilette", "cologne", "edp", "edt", "men", "women", "mens", "womens",
+    "spray", "perfume", "ml", "oz", "fl",
 }
 
-def _usa_query(query: str) -> str:
-    """Replace 'NNml' with fl oz equivalent for Amazon USA searches."""
-    import re
-    def _replace(m):
-        ml = int(m.group(1))
-        floz = ML_TO_FLOZ.get(ml)
-        return f"{floz} fl oz" if floz else m.group(0)
-    return re.sub(r'(\d+)\s*ml', _replace, query, flags=re.IGNORECASE)
-
-MIN_DELAY = 5.0
-MAX_DELAY = 10.0
+def _is_bundle(card_text):
+    """True if the card mentions 3+ distinct fragrance line names —
+    a strong signal that it's a multi-product dupe bundle, not a
+    single-fragrance listing."""
+    hits = set(m.group(0).lower() for m in FRAG_BUNDLE_MARKERS.finditer(card_text))
+    return len(hits) >= 3
 
 
-# Playwright helpers
+def clean_price_text(text):
+    if not text:
+        return text
+    return text.replace("\xa0", " ").replace("Â", "").strip()
+
+
+
+def oz_to_ml(oz):
+    return oz * 29.5735
+
+
+def extract_oz(text):
+    m = re.search(r"(\d+(\.\d+)?)\s*oz", text.lower())
+    return float(m.group(1)) if m else None
+
+def extract_ml(text):
+    text = text.lower()
+
+    m = re.search(r"(\d+(?:\.\d+)?)\s*ml", text)
+    if m:
+        return float(m.group(1))
+
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(?:fl\s*)?oz", text)
+    if m:
+        return float(m.group(1)) * 29.5735
+
+    return None
+
+_PRICE_PER_UNIT_RE = re.compile(
+    r"\$\s*\d+(?:\.\d+)?\s*/\s*(?:fl\s*\.?\s*)?(?:oz|ounce)",
+    re.IGNORECASE,
+)
+ 
+def _strip_price_per_unit(text):
+    """Remove '$X.XX/fluid ounce' style fragments so they don't pollute size."""
+    return _PRICE_PER_UNIT_RE.sub("", text)
+
+def extract_all_ml(text):
+    text = text.lower()
+    values = []
+
+    for m in re.findall(r"(\d+(?:\.\d+)?)\s*ml", text):
+        values.append(float(m))
+
+    for m in re.findall(r"(\d+(?:\.\d+)?)\s*(?:fl\s*)?oz", text):
+        values.append(float(m) * 29.5735)
+
+    return values
+
+def extract_all_ml_from_card(card):
+    """
+    Extract all size values mentioned in the *primary* visible parts of a
+    card — the h2 title and the size-badge span — NOT the options dropdown
+    or the price-per-unit text.
+ 
+    This is what we use for size scoring. Returns a list of ml values.
+    """
+    text_parts = []
+
+    h2 = card.select_one("h2")
+    if h2:
+        text_parts.append(h2.get_text(" ", strip=True))
+ 
+    for sel in (
+        "span.s-background-color-platinum",
+        'span[class*="size-badge"]',
+        'div[data-cy="title-recipe"] span',
+    ):
+        for el in card.select(sel):
+            t = el.get_text(" ", strip=True)
+            if re.search(r"\d+\s*(?:ml|fl\s*\.?\s*oz|oz|ounce)", t, re.I):
+                text_parts.append(t)
+ 
+    combined = " ".join(text_parts)
+    combined = _strip_price_per_unit(combined)
+    return extract_all_ml(combined) 
+
+def size_check(text_or_values, target_ml):
+    """Three-state size check. Accepts either:
+      - a string (parsed with extract_all_ml internally), or
+      - a list of pre-extracted ml values
+ 
+    Returns "match" / "conflict" / "unknown".
+    """
+    if isinstance(text_or_values, str):
+        values = extract_all_ml(text_or_values)
+    else:
+        values = list(text_or_values or [])
+ 
+    if not values:
+        return "unknown"
+ 
+    for v in values:
+        if abs(v - target_ml) / target_ml <= 0.12:
+            return "match"
+    return "conflict"
+
+def size_matches(title, target_ml):
+    """Backward-compatible wrapper — True for match or unknown, False only
+    for explicit conflict."""
+    return size_check(title, target_ml) != "conflict"
+
+
+def ml_to_oz_string(ml):
+    mapping = {
+        30: "1 oz",
+        50: "1.7 oz",
+        60: "2 oz",
+        100: "3.4 oz",
+        125: "4.2 oz",
+        150: "5 oz",
+        200: "6.7 oz",
+    }
+    return mapping.get(ml)
+
+
+VARIANT_MAP = {
+    "eau de toilette": "edt",
+    "edt": "edt",
+    "eau de parfum": "edp",
+    "edp": "edp",
+    "parfum": "parfum",
+    "elixir": "elixir",
+}
+
+
+def extract_variant(text):
+    text = text.lower()
+    for k, v in VARIANT_MAP.items():
+        if k in text:
+            return v
+    return None
+
+
+def build_product_struct(product, query):
+
+    name = product["name"].lower().replace("'", "").replace("\u2019", "")
+    tokens = re.findall(r"[a-z]+", name)
+    name_tokens = {t for t in tokens if t not in STOPWORDS and len(t) > 1}
+
+    size_ml = product.get("size_ml") or product.get("bottle_ml")
+    if size_ml is None and product.get("size"):
+        m = re.search(r"(\d+)\s*ml", str(product["size"]).lower())
+        if m:
+            size_ml = int(m.group(1))
+    if size_ml is None:
+        m = re.search(r"(\d+)\s*ml", query.lower())
+        if m:
+            size_ml = int(m.group(1))
+
+    size_alternatives = product.get("size_alternatives", [])
+    allowed_sizes = [size_ml] if size_ml else []
+    allowed_sizes.extend(size_alternatives)
+
+    return {
+        "brand":         product["brand"].lower(),
+        "name_tokens":   name_tokens,
+        "variant":       extract_variant(query),
+        "size_ml":       size_ml,
+        "allowed_sizes": [s for s in allowed_sizes if s],
+        "size_strict":   product.get("size_strict", True),
+    }
+
+def normalize_text(text):
+    text = text.lower()
+    text = text.replace("’", "'")
+    text = text.replace("'", "")
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    return text
+
+
+def score_match(title, product_struct, card_text="", product=None, card=None):
+    """Card scoring. New `card` parameter is the BeautifulSoup element so
+    we can extract sizes from the title+badge specifically rather than the
+    full flattened card text (which includes dropdown options).
+    """
+    title_n = normalize_text(title)
+    full_n  = normalize_text(card_text or title)
+ 
+    score = 0
+    title_tokens   = set(title_n.split())
+    product_tokens = product_struct["name_tokens"]
+
+    if NON_FRAG_RE.search(full_n):
+        return -999
+    if _is_bundle(full_n):
+        return -999
+ 
+
+    brand = product_struct["brand"]
+    if brand not in full_n:
+        return -999
+    elif brand == "dior" and "christian dior" in full_n:
+        score += 3
+    elif brand != "dior":
+        score += 1
+ 
+    if re.search(r"\b(sample|vial|mini|decant)\b", full_n):
+        return -999
+
+    if re.search(r"\b(0\.1|0\.17|0\.2|5\s*ml|10\s*ml)\b", full_n):
+        score -= 8
+
+    overlap = product_tokens.intersection(title_tokens)
+    score += len(overlap)
+ 
+    if product_tokens:
+        coverage = len(overlap) / float(len(product_tokens))
+        if coverage < 0.45:
+            return -999
+ 
+    if product:
+        full_name = normalize_text(product["name"])
+        if full_name in full_n:
+            score += 8
+ 
+    title_sizes = extract_all_ml_from_card(card) if card is not None else []
+ 
+    if product_struct["allowed_sizes"]:
+        if title_sizes:
+            results = [size_check(title_sizes, s)
+                       for s in product_struct["allowed_sizes"]]
+            if "match" in results:
+                score += 6
+            elif all(r == "conflict" for r in results):
+                score -= 6
+            else:
+                score -= 2
+        else:
+            score -= 2
+
+    if title_sizes and product_struct["size_ml"]:
+        closest = min(title_sizes,
+                      key=lambda v: abs(v - product_struct["size_ml"]))
+        diff = abs(closest - product_struct["size_ml"]) / product_struct["size_ml"]
+        if diff < 0.05:
+            score += 4
+        elif diff < 0.12:
+            score += 2
+        else:
+            score -= 3
+ 
+    if product_struct["variant"] and product_struct["variant"] in full_n:
+        score += 1
+ 
+    return score
+
 
 def _start_browser():
-    """Launch Playwright + Chromium. Returns (playwright, browser)."""
     from playwright.sync_api import sync_playwright
-    pw      = sync_playwright().start()
-    browser = pw.chromium.launch(
-        headless=True,
-        args=[
-            "--disable-blink-features=AutomationControlled",
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-        ],
-    )
+    pw = sync_playwright().start()
+    browser = pw.chromium.launch(headless=True)
     return pw, browser
 
 
-def _apply_stealth(page):
-    """Apply stealth patches using the installed playwright-stealth API."""
-    try:
-        from playwright_stealth import stealth
-        stealth(page)
-    except Exception:
-        pass  # stealth unavailable — continue without it
-
-
-def _new_page(browser, site_key="USA"):
-    """Fresh context + page with stealth patches applied."""
+def _new_context(browser):
     context = browser.new_context(
-        user_agent=(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0.0.0 Safari/537.36"
-        ),
-        viewport={"width": 1280, "height": 800},
+        user_agent=CHROME_UA,
+        viewport={"width": 1366, "height": 768},
         locale="en-US",
-        extra_http_headers={
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        },
     )
-    # Force USD on amazon.com — overrides geo-based EUR redirect for EU IPs
-    if site_key == "USA":
-        context.add_cookies([{
-            "name":   "i18n-prefs",
-            "value":  "USD",
-            "domain": ".amazon.com",
-            "path":   "/",
-        }])
-    page = context.new_page()
-    _apply_stealth(page)
-    return context, page
+    return context, context.new_page()
 
 
-def _fetch(browser, url, site_key="USA"):
-    """Fetch url with a fresh stealthy Playwright context."""
-    context, page = _new_page(browser, site_key)
+def _warmup(page, domain):
     try:
-        page.goto(url, timeout=25000, wait_until="domcontentloaded")
-        try:
-            page.wait_for_selector('[data-component-type="s-search-result"]', timeout=8000)
-        except Exception:
-            pass
+        page.goto(domain, timeout=20000)
+        time.sleep(random.uniform(1.5, 3.0))
+    except:
+        pass
+
+
+def _set_us_zip(page):
+    try:
+        page.click("#nav-global-location-popover-link", timeout=5000)
+        time.sleep(1)
+        page.fill("input[aria-label='ZIP Code']", "90210")
+        page.click("input[aria-labelledby='GLUXZipUpdate-announce']")
+        time.sleep(2)
+        logger.info("ZIP set")
+    except:
+        pass
+
+
+def _set_currency_cookie(page):
+    try:
+        page.add_init_script("""
+            document.cookie = "i18n-prefs=USD";
+        """)
+    except:
+        pass
+
+
+def _fetch(page, url):
+    try:
+        page.goto(url, timeout=25000)
+        page.wait_for_selector('[data-component-type="s-search-result"]', timeout=8000)
         return page.content()
-    except Exception as exc:
-        logger.debug(f"  Fetch error {url}: {exc}")
+    except:
         return None
-    finally:
-        try:
-            page.close()
-            context.close()
-        except Exception:
-            pass
 
 
-# Per-product scrape
+_PRICE_RE = re.compile(r"^\s*(?:AED|US\$|\$|£|€)\s*\d[\d,\.]*\s*$")
 
-def scrape_one(browser, query, site_key, scrape_date):
-    """Search Amazon and extract data from the first result."""
-    site = SITES[site_key]
 
-    # ── USA: strip ml from query (don't convert to fl oz in the URL).
-    # Converting "100ml → 3.4 fl oz" causes Amazon to rank unrelated 3.4 oz products
-    # (e.g. Sauvage EDT) above the intended fragrance when name-only ranking is better.
-    # Instead we derive the fl oz target size for tiebreaking only.
+def _clean(s):
+    """Collapse whitespace and strip NBSP-ish junk from a price string."""
+    if not s:
+        return None
+    return s.replace("\xa0", " ").replace("Â", "").strip()
+
+def extract_price(card):
+    """
+    Return the correct card price, preferring the featured offer over
+    'More Buying Choices'.
+
+    Resolution order:
+        1. div[data-cy="price-recipe"]  → span.a-price span.a-offscreen
+        2. div[data-cy="secondary-offer-recipe"]  → first a-color-base span
+        3. Any span.a-offscreen in the card that matches a price pattern
+    """
+
+    primary = card.select_one(
+        'div[data-cy="price-recipe"] span.a-price span.a-offscreen'
+    )
+    if primary:
+        txt = _clean(primary.get_text(strip=True))
+        if txt and _PRICE_RE.match(txt):
+            return txt
+
+    if not card.select_one('div[data-cy="secondary-offer-recipe"]'):
+        any_primary = card.select_one("span.a-price span.a-offscreen")
+        if any_primary:
+            txt = _clean(any_primary.get_text(strip=True))
+            if txt and _PRICE_RE.match(txt):
+                return txt
+
+    secondary = card.select_one('div[data-cy="secondary-offer-recipe"]')
+    if secondary:
+        for span in secondary.select("span.a-color-base"):
+            txt = _clean(span.get_text(strip=True))
+            if txt and _PRICE_RE.match(txt):
+                return txt
+
+    for el in card.select("span.a-offscreen"):
+        txt = _clean(el.get_text(strip=True))
+        if txt and _PRICE_RE.match(txt) and "/" not in txt:
+            return txt
+
+    return None
+
+def normalize_price(price):
+    if not price:
+        return None
+
+    price = clean_price_text(price)
+    logger.info(f"Extracted price: {price}")
+
+    m = re.search(r"(AED|\$)\s?(\d[\d,\.]*)", price)
+    return f"{m.group(1)}{m.group(2)}" if m else price
+
+
+def scrape_one(page, query, product, site_key, scrape_date):
+    """
+    Search Amazon and return the best-matching card.
+ 
+    Changes from the previous version:
+ 
+    * USA search URL strips the size suffix entirely. Amazon's search ranker
+      responds very differently to "Creed Aventus" vs "Creed Aventus 3.4 oz";
+      the latter ranks dupes higher because they are more likely to literally
+      contain "3.4 oz" in their title than Creed's actual 3.38 fl oz listing.
+    * The fallback path also now runs NON_FRAG_RE and the full-token check,
+      so dupes can't sneak in through the loose fallback either.
+    * The scan window is 15 cards for the strong path and 8 for the fallback
+      (up from 5) so legitimate Creed listings that sit below 4-5 dupe ads
+      still get considered.
+    """
+    search_query = query.strip()
+ 
     if site_key == "USA":
-        _ml_match = re.search(r'(\d+)\s*ml', query, re.I)
-        if _ml_match:
-            _ml_val = int(_ml_match.group(1))
-            _size_target = ML_TO_FLOZ.get(_ml_val)   # e.g. "3.4" for 100ml
-        else:
-            _fl_match = re.search(r'(\d+(?:\.\d+)?)\s*fl\s*oz', query, re.I)
-            _size_target = _fl_match.group(1) if _fl_match else None
-        # Strip any ml / fl oz size from the search query — search by name only
-        query_clean = re.sub(r'\d+(?:\.\d+)?\s*(?:ml|fl\s*oz|oz)\b', '', query, flags=re.I).strip()
-    else:
-        query_clean = query
-        _size_target = None
-
-    url = site["base_url"] + query_clean.replace(" ", "+")
-    if site_key == "USA":
-        url += "&currency=USD"
-
-    empty = {
-        "scrape_date":        scrape_date,
-        "country":            site_key,
-        "currency":           site["currency"],
-        "price_raw":          None,
-        "bottle_size_raw":    None,
-        "amazon_rating_raw":  None,
-        "amazon_reviews_raw": None,
-        "availability":       "not_found",
-        "amazon_title_raw":   None,
-        "amazon_url":         url,
-    }
-
-    html = _fetch(browser, url, site_key)
+        search_query = re.sub(
+            r"\s*\d+(?:\.\d+)?\s*(?:ml|fl\s*\.?\s*oz|oz|ounce)s?\b",
+            "",
+            search_query,
+            flags=re.I,
+        ).strip()
+ 
+    url = f"{SITES[site_key]['domain']}/s?k={search_query.replace(' ', '+')}"
+ 
+    html = _fetch(page, url)
     if not html:
-        empty["availability"] = "fetch_failed"
-        return empty
-
-    if "captcha" in html.lower() or "robot check" in html.lower():
-        logger.warning(f"  {site_key}: CAPTCHA detected")
-        empty["availability"] = "captcha_blocked"
-        return empty
-
-    soup  = BeautifulSoup(html, "html.parser")
+        return None
+ 
+    soup = BeautifulSoup(html, "html.parser")
     cards = soup.select('[data-component-type="s-search-result"]')
+ 
+    product_struct = build_product_struct(product, query)
 
-    if not cards:
-        logger.debug(f"  {site_key}: no result cards found")
-        return empty
-
-    import re as _re
-
-    # ─Pick best-matching card rather than blindly using cards[0]
-    # Sponsored results and related products often appear before the target.
-    # Score each card by how many query tokens appear in its title.
-    def _score_card(card, query_tokens):
-        title_el = (
-            card.select_one("h2[aria-label] span")     # product title h2 always has aria-label
-            or card.select_one("h2 a span")
-            or card.select_one("h2 span.a-text-normal")
-            or card.select_one('[data-cy="title-recipe"] h2 span')
-            or card.select_one("h2 span")
-        )
+    best_card = None
+    best_score = -999
+    target_ml = product_struct.get("size_ml")
+ 
+    for card in cards[:60]:
+        title_el = card.select_one("h2")
         if not title_el:
-            return 0, ""
-        # Score against ALL h2 text in card (product title + brand label)
-        # so "Dior" in a separate brand h2 still contributes to the score
-        full_h2 = " ".join(el.get_text(strip=True).lower() for el in card.select("h2"))
-        title_lower = title_el.get_text(strip=True).lower()
-        score = sum(1 for t in query_tokens if t in full_h2)
-        return score, title_lower
-
-    # Tokenise query: strip embedded size units first so "60ml" → "" not a whole token,
-    # then drop stop-words and bare digits.
-    _stop = {"by", "for", "men", "women", "oz", "fl", "spray", "pack", "of", "de", "ml"}
-    query_clean_tok = _re.sub(r'\d+(?:\.\d+)?\s*(?:ml|fl\s*oz|oz)\b', '', query.lower())
-    query_tokens = [
-        w for w in _re.sub(r'[^\w\s]', '', query_clean_tok).split()
-        if w not in _stop and not w.isdigit()
-    ]
-
-    # Size target for tiebreaking:
-    # USA → use _size_target derived from ML_TO_FLOZ (set in scrape_one before URL build)
-    # UAE → parse fl oz from query if present
-    if site_key == "USA":
-        size_str = _size_target        # e.g. "3.4" for 100ml — used to prefer correct size card
-    else:
-        _size_match = _re.search(r'(\d+(?:\.\d+)?)\s*fl\s*oz', query.lower())
-        size_str = _size_match.group(1) if _size_match else None
-
-    # Stricter threshold: 85% of meaningful tokens must match.
-    # 4 tokens → need 4; 3 tokens → need 3; 2 tokens → need 2.
-    # This rejects Elixir (3/4) for an EDP query, and fragrance-oil dupes (2/3) for Oud Ispahan.
-    import math as _math
-    min_score = max(2, _math.ceil(len(query_tokens) * 0.85))
-
-    # Brand check: if "dior" (or any single brand token) is in the query, the card title
-    # must contain it — rejects "dark oud ispahan" perfume oils, "1000 fahrenheit" oils etc.
-    brand_tokens = [t for t in query_tokens if t in ("dior", "chanel", "creed", "armani",
-                    "versace", "gucci", "burberry", "cartier", "hermes", "givenchy",
-                    "lancome", "prada", "dolce", "gabbana", "bvlgari", "amouage",
-                    "maison", "margiela", "parfums", "kilian", "lattafa", "ajmal",
-                    "rasasi", "swiss", "arabian", "zara")]
-
-    # Non-fragrance blacklist: skip aftershave, lotions, shower gels etc.
-    NON_FRAGRANCE_RE = _re.compile(
-        r'\b(after\s*shave|aftershave|lotion|body\s*wash|shower\s*gel|'
-        r'deodorant|deo\b|balm|shampoo|conditioner|soap|cream|gel|'
-        r'travel\s*set|gift\s*set)\b',
-        _re.I
-    )
-
-    best_card   = None
-    best_score  = -1
-    best_size   = False   # does best card match the fl oz size?
-    best_title  = ""
-    for c in cards[:20]:   # check top 20 results
-        s, t = _score_card(c, query_tokens)
-        # Skip non-fragrance product types regardless of score
-        if NON_FRAGRANCE_RE.search(t):
-            logger.debug(f"  {site_key}: skipping non-fragrance card: \"{t[:60]}\"")
             continue
-        # Brand must appear somewhere in the card h2 text (title OR brand label)
-        card_h2_text = " ".join(el.get_text(strip=True).lower() for el in c.select("h2"))
-        if brand_tokens and not any(b in card_h2_text for b in brand_tokens):
-            logger.debug(f"  {site_key}: skipping off-brand card: \"{t[:60]}\"")
-            continue
-        # Fragrance sub-type exclusion: if the card title contains a distinguishing
-        # variant word (elixir, intense, noir…) that is NOT in the query, skip it.
-        # Prevents "Sauvage Parfum" query from matching "Sauvage Elixir Parfum Concentre".
-        SUBTYPES = {"elixir", "intense", "noir", "extreme", "blanche", "extrait",
-                    "midnight", "absolu", "prive", "exclusive"}
-        card_subtypes = SUBTYPES & set(t.split())
-        query_subtypes = SUBTYPES & set(query_tokens)
-        if card_subtypes - query_subtypes:   # card has subtype words not in query
-            logger.debug(f"  {site_key}: skipping subtype mismatch card: \"{t[:60]}\"")
-            continue
-        # Size tiebreaker + hard filter
-        # Check BOTH the size badge AND the title for size mentions
-        card_text = t
-        size_badge = c.select_one('[data-csa-c-content-id="alf-size-badge-component"]')
-        badge_text = size_badge.get_text(strip=True).lower() if size_badge else ""
-        if badge_text:
-            card_text += " " + badge_text
-        card_has_size = bool(size_str and size_str in card_text)
-
-        # Hard size filter: reject cards with a clearly different size.
-        # Matches both "fl oz" and "ounce(s)" in badge OR title.
-        # Uses numeric tolerance ±0.25 oz to handle "2.0" vs "2.03" rounding.
-        if size_str:
-            SIZE_PAT = _re.compile(
-                r'(\d+(?:\.\d+)?)\s*(?:fl\s*oz|fluid\s*oz|ounces?)\b', _re.I
-            )
-            # Check badge first, then fall back to title
-            check_text = badge_text if badge_text else t
-            size_hit = SIZE_PAT.search(check_text)
-            if size_hit:
-                try:
-                    found_fl = float(size_hit.group(1))
-                    target_fl = float(size_str)
-                    if abs(found_fl - target_fl) > 0.25:
-                        logger.debug(
-                            f"  {site_key}: skipping wrong-size card "
-                            f"(want {size_str}oz, found {found_fl}oz): \"{t[:50]}\""
-                        )
-                        continue
-                except (ValueError, TypeError):
-                    pass
-
-        # Prefer higher score; break ties by size match
-        if s > best_score or (s == best_score and card_has_size and not best_size):
+ 
+        title = title_el.get_text(" ", strip=True)
+        card_text = card.get_text(" ", strip=True)
+ 
+        s = score_match(title, product_struct, card_text, product, card)
+        logger.info(f"SCORE: {s} | {title}")
+ 
+        if s > best_score:
             best_score = s
-            best_card  = c
-            best_title = t
-            best_size  = card_has_size
+            best_card = card
+        elif s == best_score and best_card is not None and target_ml:
+            new_sizes  = extract_all_ml_from_card(card)
+            best_sizes = extract_all_ml_from_card(best_card)
+ 
+            def _closest_diff(sizes):
+                if not sizes:
+                    return float("inf")
+                return min(abs(v - target_ml) for v in sizes)
+ 
+            if _closest_diff(new_sizes) < _closest_diff(best_sizes):
+                best_card = card
 
-    matched_title = best_title[:80] if best_title else "—"
-    logger.info(
-        f"  {site_key}: card match score={best_score}/{len(query_tokens)} "
-        f"(min={min_score}) → \"{matched_title}\""
-    )
+    if best_score < 2:
+        logger.info(f"  no confident match for: {product['brand']} {product['name']}")
+        return None
+ 
+    if not best_card:
+        logger.info(f"  no match for: {product['brand']} {product['name']}")
+        return None
+ 
+    return extract_data(best_card, product, site_key, scrape_date, url)
 
-    # If no card meets the threshold the product isn't on this marketplace
-    if best_score < min_score or best_card is None:
-        logger.info(f"  {site_key}: no confident match — marking unavailable")
-        empty["availability"] = "not_on_marketplace"
-        return empty
 
-    card = best_card
-    # Try progressively broader title selectors — product title h2 always has aria-label
-    title_el = (
-        card.select_one("h2[aria-label] span")
-        or card.select_one("h2 a span")
-        or card.select_one("h2 span.a-text-normal")
-        or card.select_one('[data-cy="title-recipe"] h2 span')
-        or card.select_one("h2 span")
-    )
-    rating_el  = card.select_one('[aria-label*="out of 5 stars"]')
-    reviews_el = card.select_one(".a-size-base.s-underline-text")
+def _extract_rating_text(card):
+    """Pull the 'X out of 5 stars' text from a search result card."""
+    el = card.select_one("i.a-icon-star-small span.a-icon-alt") \
+         or card.select_one("span.a-icon-alt") \
+         or card.select_one("i[class*='a-star'] span")
+    if el:
+        txt = el.get_text(strip=True)
+        if "out of" in txt.lower():
+            return txt
+    return None
 
-    expected_currency = site["currency"]  # "USD" or "AED"
-    currency_symbols  = {"USD": "$", "AED": "AED"}
-    sym = currency_symbols.get(expected_currency, "")
 
-    # amazon.ae geo-redirects EU visitors to EUR pricing, so we also accept EUR/€
-    # as a valid price signal and record whatever currency was actually served.
-    ANY_CURRENCY_RE = _re.compile(
-        r'(?:£|\$|€|EUR|GBP|AED|USD)\s*[\d,.]|[\d,.]+\s*(?:EUR|GBP|AED|USD)',
-        _re.I
-    )
+def _extract_review_count(card):
+    """Pull the review count (e.g. '1,234') from a search result card."""
+    for sel in (
+        "a[href*='#customerReviews'] span.a-size-base",
+        "span.a-size-base.s-underline-text",
+        "a.a-link-normal span.a-size-base",
+    ):
+        el = card.select_one(sel)
+        if el:
+            txt = el.get_text(strip=True)
+            if re.match(r"^[\d,]+$", txt):
+                return txt
+    return None
 
-    # ── Price extraction — 4 fallbacks ───────────────────────────────────────
-    price_text      = None
-    detected_currency = expected_currency  # will be overridden if EUR served
 
-    def _looks_like_price(t, sym):
-        """Accept expected currency OR any recognisable currency symbol/code."""
-        if sym and _re.search(rf'(?:{_re.escape(sym)}|{expected_currency})\s*[\d,.]', t, _re.I):
-            return True
-        return bool(ANY_CURRENCY_RE.search(t))
+def _size_from_product_or_title(product, title):
+    """Prefer the size in products.json; fall back to parsing the card title."""
+    sz = product.get("size")
+    if sz:
+        return str(sz)
+    if title:
+        m = re.search(r"(\d+(?:\.\d+)?\s*(?:ml|fl\s*oz|oz))", title, re.I)
+        if m:
+            return m.group(1)
+    return None
 
-    def _extract_currency(t):
-        """Return the currency code detected in a price string."""
-        for code in ("GBP", "AED", "USD", "EUR"):
-            if code in t.upper():
-                return code
-        if "£" in t:
-            return "GBP"
-        if "€" in t:
-            return "EUR"
-        if "$" in t:
-            return "USD"
-        return expected_currency
 
-    # 1. data-csa-c-price-to-pay attribute (most reliable — numeric, no encoding)
-    atc = card.select_one("[data-csa-c-price-to-pay]")
-    if atc:
-        numeric = atc.get("data-csa-c-price-to-pay", "").strip()
-        if numeric:
-            price_text = f"{sym}{numeric}"
-            detected_currency = expected_currency
-
-    # 2. Featured offer Buy Box: data-cy="price-recipe" .a-offscreen
-    if not price_text:
-        recipe = card.select_one('[data-cy="price-recipe"]')
-        if recipe:
-            el = recipe.select_one(".a-price .a-offscreen")
-            if el:
-                t = el.get_text(strip=True)
-                if _looks_like_price(t, sym):
-                    price_text = t
-                    detected_currency = _extract_currency(t)
-
-    # 3. Any .a-price .a-offscreen in the card
-    if not price_text:
-        for el in card.select(".a-price .a-offscreen"):
-            t = el.get_text(strip=True)
-            if _looks_like_price(t, sym):
-                price_text = t
-                detected_currency = _extract_currency(t)
-                break
-
-    # 4. Secondary offer row: "No featured offers available EUR 114.55 (11 new offers)"
-    #    amazon.ae geo-serves EUR to EU IPs — this is where our prices land.
-    if not price_text:
-        secondary = card.select_one('[data-cy="secondary-offer-recipe"]')
-        if secondary:
-            for span in secondary.find_all("span"):
-                t = span.get_text(strip=True).replace("\xa0", " ")  # normalise NBSP
-                if _looks_like_price(t, sym):
-                    price_text = t
-                    detected_currency = _extract_currency(t)
-                    break
+def extract_data(card, product, site_key, scrape_date, url):
+    title_el = card.select_one("h2 span")
+    title = title_el.get_text(strip=True) if title_el else None
+    price = normalize_price(extract_price(card))
 
     return {
         "scrape_date":        scrape_date,
         "country":            site_key,
-        "currency":           detected_currency,   # actual currency served (may differ from expected)
-        "price_raw":          price_text,
-        "bottle_size_raw":    title_el.get_text(strip=True)[:200] if title_el else None,
-        "amazon_rating_raw":  rating_el.get("aria-label") if rating_el else None,
-        "amazon_reviews_raw": reviews_el.get_text(strip=True) if reviews_el else None,
-        "availability":       "in_stock" if price_text else "unavailable",
-        "amazon_title_raw":   title_el.get_text(strip=True)[:200] if title_el else None,
+        "currency":           SITES[site_key]["currency"],
+        "name":               product["name"],
+        "brand":              product["brand"],
+        "category":           product.get("category", "fragrance"),
+        "price_raw":          price,
+        "bottle_size_raw":    _size_from_product_or_title(product, title),
+        "amazon_rating_raw":  _extract_rating_text(card),
+        "amazon_reviews_raw": _extract_review_count(card),
+        "amazon_title_raw":   title,
         "amazon_url":         url,
+        "availability":       "in_stock" if price else "unavailable",
     }
 
-
-# Batch scraping
-
 def scrape_all(products, scrape_date, limit=None):
-    """Scrape Amazon UK + UAE for all products."""
-    prods   = products[:limit] if limit else products
+    products = products[:limit] if limit else products
     results = []
 
     pw, browser = _start_browser()
-    try:
-        for i, p in enumerate(prods):
-            logger.info(f"[{i+1}/{len(prods)}] Amazon: {p['brand']} — {p['name']}")
-            query = p.get("amazon_search", f"{p['brand']} {p['name']}")
 
-            for country in ["USA", "UAE"]:
-                row = scrape_one(browser, query, country, scrape_date)
-                row["name"]     = p["name"]
-                row["brand"]    = p["brand"]
-                row["category"] = p.get("category", "")
-                results.append(row)
-                logger.info(
-                    f"  {country}: price={row['price_raw']} | "
-                    f"avail={row['availability']} | "
-                    f"rating={row['amazon_rating_raw']}"
-                )
+    try:
+        for country in ["USA", "UAE"]:
+            context, page = _new_context(browser)
+
+            _warmup(page, SITES[country]["domain"])
+
+            if country == "USA":
+                _set_us_zip(page)
+                _set_currency_cookie(page)
+
+            for p in products:
+                query = p.get("amazon_search", f"{p['brand']} {p['name']}")
+
+                row = scrape_one(page, query, p, country, scrape_date)
+
+                if row:
+                    results.append(row)
+
                 time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
+
+            page.close()
+            context.close()
 
     finally:
         browser.close()
         pw.stop()
 
-    logger.info(f"Amazon done: {len(results)} records ({len(prods)} products × 2 countries)")
     return results
 
 
-# Persistence
-
 def save_raw(data, path="raw_data/amazon_raw.csv"):
-    """Append scraped data to CSV."""
+    """Persist Amazon scrape results, deduplicating same-day re-runs.
+ 
+    Behaviour:
+    - Existing rows from earlier dates are preserved.
+    - Existing rows from the same date for the same product+country
+      are REPLACED by the fresh row, not appended alongside.
+    - First run on an empty path just writes the new data.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    df     = pd.DataFrame(data)
-    exists = os.path.exists(path)
-    df.to_csv(path, mode="a", header=not exists, index=False, encoding="utf-8-sig")
-    logger.info(f"Saved {len(df)} rows → {path}")
-    return df
+ 
+    new_df = pd.DataFrame(data)
+
+    key_cols = ["scrape_date", "country", "name", "brand"]
+ 
+    if os.path.exists(path):
+        try:
+            existing = pd.read_csv(path, encoding="utf-8-sig")
+        except Exception as e:
+            logger.warning(f"Could not read existing {path}: {e} — starting fresh")
+            existing = pd.DataFrame()
+    else:
+        existing = pd.DataFrame()
+ 
+    if not existing.empty and set(key_cols).issubset(existing.columns):
+
+        new_keys = set(
+            tuple(row[c] for c in key_cols)
+            for _, row in new_df.iterrows()
+        )
+ 
+        before = len(existing)
+        existing = existing[
+            ~existing[key_cols].apply(tuple, axis=1).isin(new_keys)
+        ]
+        replaced = before - len(existing)
+        if replaced:
+            logger.info(f"Replaced {replaced} existing rows with fresh data")
+ 
+    combined = pd.concat([existing, new_df], ignore_index=True)
+ 
+    try:
+        combined.to_csv(path, index=False, encoding="utf-8-sig")
+    except PermissionError:
+        alt_path = path.replace(".csv", "_backup.csv")
+        logger.warning(f"File locked. Saving to {alt_path}")
+        combined.to_csv(alt_path, index=False, encoding="utf-8-sig")
+        path = alt_path
+ 
+    logger.info(f"Saved {len(new_df)} new rows ({len(combined)} total in {path})")
+    return new_df
 
 
 if __name__ == "__main__":
     with open("products.json") as f:
         products = json.load(f)
+
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    data  = scrape_all(products, today, limit=3)
+
+    data = scrape_all(products, today, limit=3)
+
     if data:
         df = save_raw(data)
-        print(df[["name", "country", "price_raw", "availability"]].to_string())
+        print(df[["name", "country", "price_raw"]])
