@@ -1,33 +1,5 @@
 """
-scrape_fragrantica.py — Scrapes Fragrantica using Playwright (headless Chrome)
-===============================================================================
-Uses Playwright to render JavaScript so Vue components fully hydrate before
-BeautifulSoup parses the page.  This is required because vote data (love/like/
-ok/dislike/hate, seasons, wear-time) is injected by the likes-rating-new and
-seasons-rating-new Vue components — they never appear in the raw server HTML.
-
-All other data (rating, notes, accords, perfumers, year, family, gender) was
-already working with cloudscraper and is unchanged here.
-
-
-DOM notes
----------
- * Rating card / When-To-Wear card:
-     Each card is  div.tw-rating-card
-     The card title is  span.tw-rating-card-label
-     Each data block is  div.flex-col.items-center  (CSS multi-class selector)
-     Label text = first direct-child <span> whose text matches a target word
-     Vote count  = span.tabular-nums  anywhere inside that same block
-
-   KEY: BeautifulSoup's class_ lambda is called ONE class name at a time,
-   so AND-conditions like "flex-col AND items-center" cannot be written with it.
-   Use  element.select("div.flex-col.items-center")  (CSS selector) instead.
-
- * Note pyramid — 3  div.pyramid-level-container  in order: top, middle, base
- * Main accords — span.truncate inside the "main accords" h6 sibling div
- * Perfumers    — <a href="/noses/..."> link text spans
- * Year / family / gender — regex on  #perfume-description-content  text
-"""
+Scrapes Fragrantica using Playwright (headless Chrome)"""
 
 import re
 import time
@@ -45,14 +17,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("fragrantica")
 
-# Polite-crawl delays
+
 MIN_DELAY   = 5.0
 MAX_DELAY   = 10.0
 PAUSE_EVERY = 20
 PAUSE_MIN   = 30
 PAUSE_MAX   = 60
 
-# Playwright page fetch
 
 def _new_page(browser):
     """Create a fresh browser context + page (resets cookies/session state)."""
@@ -73,7 +44,6 @@ def _page_is_blocked(html):
     """Return True if the page looks like a Cloudflare challenge or empty page."""
     if len(html) < 5000:
         return True
-    # No description content = not a real perfume page
     if 'id="perfume-description-content"' not in html and "perfume-description-content" not in html:
         return True
     return False
@@ -87,7 +57,6 @@ def _fetch_rendered_html(page, url, timeout_ms=30000):
     """
     page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
 
-    # Wait for Vue to hydrate the rating card — up to 12 s
     try:
         page.wait_for_selector(
             ".tw-rating-card div.flex-col.items-center",
@@ -102,7 +71,7 @@ def _fetch_rendered_html(page, url, timeout_ms=30000):
 def create_browser_context():
     """
     Launch Playwright + Chromium browser.
-    Returns (playwright, browser).
+    Returns (playwright, browser) — caller must close them.
 
     Usage:
         pw, browser = create_browser_context()
@@ -117,8 +86,6 @@ def create_browser_context():
     browser = pw.chromium.launch(headless=True)
     return pw, browser
 
-
-# Vote-count string → integer
 
 def _parse_vote_count(text):
     """
@@ -140,36 +107,12 @@ def _parse_vote_count(text):
         return None
 
 
-# Generic card-vote extractor
-
 def _extract_card_votes(soup, card_header_text, target_labels):
     """
     Extract label → vote-count pairs from a Fragrantica rating card.
-
-    Fragrantica has two rating cards:
-        "Rating"       — love / like / ok / dislike / hate
-        "When To Wear" — winter / spring / summer / fall / day / night
-
-    Each card contains  div.flex-col.items-center  blocks.  Each block has:
-        div (icon)
-        span "love"            ← direct-child label span
-        div.w-full
-          div (progress bar)
-          span.tabular-nums    ← vote count
-
-    Parameters
-    ----------
-    soup             : BeautifulSoup of the full page
-    card_header_text : "Rating" or "When To Wear"
-    target_labels    : set of lowercase strings to match (e.g. {"love","like"})
-
-    Returns
-    -------
-    dict  {label: int_count}
     """
     results = {}
 
-    # Find the correct card
     card = None
     for candidate in soup.find_all(class_="tw-rating-card"):
         lbl_el = candidate.find(class_="tw-rating-card-label")
@@ -181,9 +124,7 @@ def _extract_card_votes(soup, card_header_text, target_labels):
         logger.debug(f"  Card '{card_header_text}' not found in page")
         return results
 
-
     for block in card.select("div.flex-col.items-center"):
-        # First direct-child <span> whose text matches a target label
         label_text = None
         for child in block.children:
             if isinstance(child, Tag) and child.name == "span":
@@ -195,15 +136,12 @@ def _extract_card_votes(soup, card_header_text, target_labels):
         if label_text is None:
             continue
 
-        # Vote count = span.tabular-nums anywhere inside this block
         count_span = block.find("span", class_="tabular-nums")
         if count_span:
             results[label_text] = _parse_vote_count(count_span.get_text(strip=True))
 
     return results
 
-
-# Notes extraction
 
 def _extract_notes_from_pyramid(soup):
     """
@@ -250,8 +188,6 @@ def _extract_notes_from_description(soup):
     return _section("Top"), _section("middle"), _section("base")
 
 
-# Accords extraction
-
 def _extract_main_accords(soup):
     """
     Extract accord names from the bar-chart section headed "main accords".
@@ -270,8 +206,6 @@ def _extract_main_accords(soup):
     return ", ".join(accords) if accords else None
 
 
-# Perfumers extraction
-
 def _extract_perfumers(soup):
     """Extract perfumer names from  <a href="/noses/...">  links."""
     names = []
@@ -282,8 +216,6 @@ def _extract_perfumers(soup):
             names.append(name)
     return ", ".join(names) if names else None
 
-
-# Description fields
 
 def _extract_description_fields(soup):
     result = {"year": None, "gender": None, "fragrance_family": None}
@@ -297,12 +229,10 @@ def _extract_description_fields(soup):
     if m:
         result["year"] = m.group(1)
 
-    # Fragrance family — text between "is a " and " fragrance"
     m = re.search(r'is\s+a\s+(.+?)\s+fragrance', text, re.I)
     if m:
         result["fragrance_family"] = m.group(1).strip()
 
-    # Gender
     tl = text.lower()
     if "for women and men" in tl or "for men and women" in tl:
         result["gender"] = "unisex"
@@ -314,22 +244,10 @@ def _extract_description_fields(soup):
     return result
 
 
-# Per-page scrape
-
 def scrape_one(browser, product, scrape_date):
     """
     Scrape one Fragrantica page. Creates a fresh browser context per page
     so Cloudflare cannot correlate requests across the session.
-
-    Parameters
-    ----------
-    browser     : Playwright browser object (from create_browser_context)
-    product     : dict — keys: name, brand, fragrantica_url, [category]
-    scrape_date : ISO date string, e.g. "2025-01-15"
-
-    Returns
-    -------
-    dict or None if the page could not be fetched
     """
     url   = product["fragrantica_url"]
     name  = product["name"]
@@ -363,7 +281,6 @@ def scrape_one(browser, product, scrape_date):
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Schema.org aggregate rating
     rating = None
     tag = soup.find(itemprop="ratingValue")
     if tag:
@@ -374,17 +291,14 @@ def scrape_one(browser, product, scrape_date):
     if tag:
         votes = tag.get_text(strip=True)
 
-    # Description: family, year, gender
     desc_fields = _extract_description_fields(soup)
 
-    # Fallback year from full page text
     if not desc_fields["year"]:
         m = re.search(r'(?:launched|created|released)\s+in\s+(\d{4})',
                       soup.get_text(), re.I)
         if m:
             desc_fields["year"] = m.group(1)
 
-    # Fallback gender from full page text
     if not desc_fields["gender"]:
         tl = soup.get_text().lower()
         if "for women and men" in tl or "for men and women" in tl:
@@ -394,22 +308,19 @@ def scrape_one(browser, product, scrape_date):
         elif "for men" in tl:
             desc_fields["gender"] = "male"
 
- 
     top, mid, base = _extract_notes_from_pyramid(soup)
     if not top and not mid and not base:
         top, mid, base = _extract_notes_from_description(soup)
 
-    # Accords + perfumers
+
     main_accords = _extract_main_accords(soup)
     perfumers    = _extract_perfumers(soup)
 
-    # Rating card — love / like / ok / dislike / hate
     sentiment = _extract_card_votes(
         soup, "Rating",
         {"love", "like", "ok", "dislike", "hate"},
     )
 
-    # When-To-Wear card — seasons + day/night
     wear = _extract_card_votes(
         soup, "When To Wear",
         {"winter", "spring", "summer", "fall", "day", "night"},
@@ -445,22 +356,8 @@ def scrape_one(browser, product, scrape_date):
     }
 
 
-# Batch scraping
-
 def scrape_all(products, scrape_date, limit=None):
-    """
-    Scrape a list of products with polite rate-limiting.
-
-    Parameters
-    ----------
-    products    : list of product dicts (from products.json)
-    scrape_date : ISO date string
-    limit       : int — scrape only first N products (for testing)
-
-    Returns
-    -------
-    list of raw result dicts
-    """
+    """Scrape a list of products with polite rate-limiting."""
     prods   = products[:limit] if limit else products
     results, skipped = [], []
 
@@ -512,17 +409,42 @@ def scrape_all(products, scrape_date, limit=None):
     return results
 
 
-# Persistence
-
 def save_raw(data, path="raw_data/fragrantica_raw.csv"):
-    """Append scraped rows to CSV; creates file with header on first call."""
+    """Persist Fragrantica scrape results, deduplicating same-day re-runs.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    df     = pd.DataFrame(data)
-    exists = os.path.exists(path)
-    df.to_csv(path, mode="a", header=not exists, index=False, encoding="utf-8")
-    logger.info(f"Saved {len(df)} rows → {path}")
-    return df
 
+    new_df = pd.DataFrame(data)
+
+    key_cols = ["scrape_date", "name", "brand"]
+
+    if os.path.exists(path):
+        try:
+            existing = pd.read_csv(path, encoding="utf-8")
+        except Exception as e:
+            logger.warning(f"Could not read existing {path}: {e} — starting fresh")
+            existing = pd.DataFrame()
+    else:
+        existing = pd.DataFrame()
+
+    if not existing.empty and set(key_cols).issubset(existing.columns):
+        new_keys = set(
+            tuple(row[c] for c in key_cols)
+            for _, row in new_df.iterrows()
+        )
+        before = len(existing)
+        existing = existing[
+            ~existing[key_cols].apply(tuple, axis=1).isin(new_keys)
+        ]
+        replaced = before - len(existing)
+        if replaced:
+            logger.info(f"Replaced {replaced} existing rows with fresh data")
+
+    combined = pd.concat([existing, new_df], ignore_index=True)
+    combined.to_csv(path, index=False, encoding="utf-8")
+
+    logger.info(f"Saved {len(new_df)} new rows ({len(combined)} total in {path})")
+    return new_df
 
 
 if __name__ == "__main__":
