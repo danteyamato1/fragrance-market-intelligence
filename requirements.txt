@@ -6,3 +6,5 @@ numpy>=1.24.0
 scikit-learn>=1.2
 cloudscraper>=1.2.71
 requests>=2.31.0
+matplotlib>=3.7
+bokeh>=3.0
