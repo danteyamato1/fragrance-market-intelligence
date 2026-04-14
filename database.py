@@ -1,32 +1,25 @@
 """
-database.py — SQLite database loading with normalised schema
+database.py - SQLite database loading with normalised schema
 ==============================================================
 Tables
 ------
-    brands           — one row per brand
-    fragrances       — one row per fragrance (name + brand)
-    fragrantica_data — daily Fragrantica scrape (rating, notes, votes, …)
-    amazon_prices    — daily Amazon price data per country
-
-Migration
----------
-    If the database already exists with the old schema (missing the new
-    columns added in this version), the new columns are added automatically
-    via ALTER TABLE … ADD COLUMN.  This is safe to call repeatedly — each
-    ALTER is wrapped in a try/except so it silently skips columns that exist.
+    brands           - one row per brand
+    fragrances       - one row per fragrance (name + brand)
+    fragrantica_data - daily Fragrantica scrape (rating, notes, votes, …)
+    amazon_prices    - daily Amazon price data per country
 
 New columns (fragrantica_data)
 ------------------------------
-    fragrance_family TEXT    — e.g. "Aromatic Fougere"
-    main_accords     TEXT    — comma-separated accord names
-    perfumers        TEXT    — comma-separated creator names
-    votes_love       INTEGER — community sentiment breakdown
+    fragrance_family TEXT    - e.g. "Aromatic Fougere"
+    main_accords     TEXT    - comma-separated accord names
+    perfumers        TEXT    - comma-separated creator names
+    votes_love       INTEGER - community sentiment breakdown
     votes_like       INTEGER
     votes_ok         INTEGER
     votes_dislike    INTEGER
     votes_hate       INTEGER
-    wear_day         INTEGER — When To Wear: day votes
-    wear_night       INTEGER — When To Wear: night votes
+    wear_day         INTEGER - When To Wear: day votes
+    wear_night       INTEGER - When To Wear: night votes
 """
 
 import sqlite3
@@ -35,8 +28,6 @@ import logging
 logger  = logging.getLogger("database")
 DB_PATH = "fragrance_market.db"
 
-# New columns absent from the v1 schema
-# Each tuple: (column_name, sql_type)
 _NEW_FRAGRANTICA_COLS = [
     ("fragrance_family", "TEXT"),
     ("main_accords",     "TEXT"),
@@ -64,7 +55,6 @@ def create_database(path=DB_PATH):
     conn = sqlite3.connect(path)
     c    = conn.cursor()
 
-    # brands
     c.execute("""
         CREATE TABLE IF NOT EXISTS brands (
             brand_id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +63,6 @@ def create_database(path=DB_PATH):
         )
     """)
 
-    # fragrances
     c.execute("""
         CREATE TABLE IF NOT EXISTS fragrances (
             fragrance_id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,7 +76,7 @@ def create_database(path=DB_PATH):
         )
     """)
 
-    # fragrantica_data full schema (new databases)
+
     c.execute("""
         CREATE TABLE IF NOT EXISTS fragrantica_data (
             id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,7 +129,6 @@ def create_database(path=DB_PATH):
             else:
                 raise
 
-    # amazon_prices
     c.execute("""
         CREATE TABLE IF NOT EXISTS amazon_prices (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,7 +150,6 @@ def create_database(path=DB_PATH):
     return conn
 
 
-# Helpers
 
 def _get_fragrance_id(cursor, name, brand):
     """Return fragrance_id for (name, brand) or None if not found."""
@@ -206,7 +193,6 @@ def _str_or_none(val):
     return s if s else None
 
 
-# Public loader
 
 def load_to_database(frag_df, amz_df=None, path=DB_PATH):
     """
@@ -214,25 +200,25 @@ def load_to_database(frag_df, amz_df=None, path=DB_PATH):
 
     Parameters
     ----------
-    frag_df : pandas DataFrame — output of transforms.clean_fragrantica()
-    amz_df  : pandas DataFrame — output of transforms.clean_amazon()  (optional)
-    path    : str — path to .db file
+    frag_df : pandas DataFrame - output of transforms.clean_fragrantica()
+    amz_df  : pandas DataFrame - output of transforms.clean_amazon()
+    path    : str - path to .db file
 
     Returns
     -------
     dict  {table_name: row_count}
     """
-    conn = create_database(path)   # also handles migration
+    conn = create_database(path) 
     c    = conn.cursor()
 
-    # Brands
+
     for _, r in frag_df[["brand", "category"]].drop_duplicates().iterrows():
         c.execute(
             "INSERT OR IGNORE INTO brands (brand_name, category) VALUES (?, ?)",
             (r["brand"], r["category"]),
         )
 
-    # Fragrances
+
     for _, r in frag_df.drop_duplicates(subset=["name", "brand"]).iterrows():
         c.execute("SELECT brand_id FROM brands WHERE brand_name = ?", (r["brand"],))
         row = c.fetchone()
@@ -250,7 +236,6 @@ def load_to_database(frag_df, amz_df=None, path=DB_PATH):
             ),
         )
 
-    # Fragrantica daily data
     for _, r in frag_df.iterrows():
         fid = _get_fragrance_id(c, r["name"], r["brand"])
         if not fid:
@@ -304,7 +289,6 @@ def load_to_database(frag_df, amz_df=None, path=DB_PATH):
             ),
         )
 
-    # Amazon prices 
     if amz_df is not None and not amz_df.empty:
         for _, r in amz_df.iterrows():
             fid = _get_fragrance_id(c, r["name"], r["brand"])
@@ -333,7 +317,6 @@ def load_to_database(frag_df, amz_df=None, path=DB_PATH):
 
     conn.commit()
 
-    # Summary
     summary = {}
     for table in ["brands", "fragrances", "fragrantica_data", "amazon_prices"]:
         c.execute(f"SELECT COUNT(*) FROM {table}")
