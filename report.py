@@ -23,7 +23,7 @@ logger = logging.getLogger("report")
 try:
     from bokeh.plotting import figure
     from bokeh.embed import components
-    from bokeh.resources import CDN
+    from bokeh.resources import INLINE
     from bokeh.models import HoverTool, ColumnDataSource
     BOKEH_AVAILABLE = True
 except ImportError:
@@ -676,7 +676,7 @@ def build_report(date: str | None = None,
     charts_html = "\n".join(_chart_block(t, c, n) for t, c, n in rendered)
 
     has_bokeh = any(c["type"] == "bokeh" for _, c, _ in rendered)
-    bokeh_head = CDN.render() if (has_bokeh and BOKEH_AVAILABLE) else ""
+    bokeh_head = INLINE.render() if (has_bokeh and BOKEH_AVAILABLE) else ""
 
     html = _TEMPLATE.format(
         date=date,
