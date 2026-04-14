@@ -1,5 +1,0 @@
-price_band,count,pct,gap_status
-luxury,1,10.0,adequate
-mid_range,2,20.0,adequate
-premium,4,40.0,adequate
-unknown,3,30.0,adequate
