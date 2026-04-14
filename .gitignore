@@ -3,4 +3,7 @@ __pycache__/
 .env
 venv/
 raw_data/_progress.json
-*.db
+
+*.db-wal
+*.db-shm
+*.db-journal
