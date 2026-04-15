@@ -28,7 +28,7 @@ try:
     BOKEH_AVAILABLE = True
 except ImportError:
     BOKEH_AVAILABLE = False
-    logger.warning("bokeh not installed — interactive charts will fall back to matplotlib")
+    logger.warning("bokeh not installed - interactive charts will fall back to matplotlib")
 
 DB_PATH      = "fragrance_market.db"
 OUTPUT_DIR   = "cleaned_data"
@@ -661,7 +661,7 @@ def build_report(date: str | None = None,
         ("Daily price trend",
          chart_price_history(hist),
          "Mean price-per-ml over the last 30 days. Requires multiple days of "
-         "scraped data — intentionally omitted on a single-day dataset."),
+         "scraped data - intentionally omitted on a single-day dataset."),
     ]
 
     rendered = [(t, c, n) for t, c, n in charts if c]
