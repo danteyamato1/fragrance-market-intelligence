@@ -1,31 +1,31 @@
 name,brand,brand_origin,rating,price_per_ml,value_score
-Tres Nuit,Armaf,arabic,4.13,0.182,22.67
-Fakhar Black,Lattafa,arabic,4.23,0.205,20.624
-Saffron Oud,Arabian Oud,arabic,4.7,0.238,19.773
-Hunter Intense,Armaf,arabic,4.26,0.216,19.686
-Legesi Homme,Armaf,arabic,4.37,0.224,19.544
-Detour Noir,Al Haramain,arabic,4.29,0.222,19.29
+Tres Nuit,Armaf,arabic,4.13,0.183,22.579
+Fakhar Black,Lattafa,arabic,4.23,0.204,20.71
+Detour Noir,Al Haramain,arabic,4.29,0.209,20.656
+Saffron Oud,Arabian Oud,arabic,4.7,0.237,19.852
+Hunter Intense,Armaf,arabic,4.26,0.218,19.574
+Legesi Homme,Armaf,arabic,4.37,0.227,19.276
+Yara,Lattafa,arabic,3.97,0.21,19.035
 Qasamat Mohraf,Rasasi,arabic,4.14,0.222,18.607
-Club de Nuit Intense,Armaf,arabic,4.11,0.228,18.042
-Badee Al Oud Amethyst,Lattafa,arabic,4.04,0.231,17.512
-Hawas for Him,Rasasi,arabic,4.32,0.25,17.44
-Eros,Versace,designer,4.07,0.482,8.437
-Bright Crystal,Versace,designer,3.74,0.451,8.309
-Phantom Parfum,Rabanne,designer,3.91,0.577,6.78
-Acqua di Gio,Giorgio Armani,designer,4.13,0.764,6.132
-La Nuit de l'Homme,Yves Saint Laurent,designer,4.45,0.761,6.028
-Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.723,5.903
-Pour Femme Dylan Blue,Versace,designer,3.78,0.777,5.792
-Armani Code Parfum,Giorgio Armani,designer,4.41,0.765,5.764
-Classique,Jean Paul Gaultier,designer,3.92,0.707,5.546
-Le Male Le Parfum,Jean Paul Gaultier,designer,4.6,0.935,5.182
-Wind Flowers,Creed,niche,3.61,2.004,25.633
-Royal Oud,Creed,niche,4.36,0.359,12.131
-Millesime Imperial,Creed,niche,4.23,2.988,7.052
+Badee Al Oud Amethyst,Lattafa,arabic,4.04,0.23,17.584
+Hawas for Him,Rasasi,arabic,4.32,0.253,17.28
+Eros,Versace,designer,4.07,0.48,8.471
+Bright Crystal,Versace,designer,3.74,0.449,8.343
+Phantom Parfum,Rabanne,designer,3.91,0.574,6.808
+Acqua di Gio,Giorgio Armani,designer,4.13,0.773,5.972
+Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.72,5.927
+Pour Femme Dylan Blue,Versace,designer,3.78,0.774,5.816
+Armani Code Parfum,Giorgio Armani,designer,4.41,0.762,5.788
+La Nuit de l'Homme,Yves Saint Laurent,designer,4.45,0.798,5.722
+Classique,Jean Paul Gaultier,designer,3.92,0.69,5.686
+Le Male Le Parfum,Jean Paul Gaultier,designer,4.6,0.931,5.203
+Wind Flowers,Creed,niche,3.61,1.996,25.741
+Royal Oud,Creed,niche,4.36,0.358,12.18
+Millesime Imperial,Creed,niche,4.23,2.975,7.081
 Aventus Cologne,Creed,niche,4.33,0.685,6.325
-Lost Cherry,Tom Ford,niche,4.07,0.781,5.209
-Black Orchid,Tom Ford,niche,3.89,1.022,3.855
-Fiero,Xerjoff,niche,4.21,1.161,3.626
-Tuscan Leather,Tom Ford,niche,4.26,1.24,3.436
-Verde Accento,Xerjoff,niche,4.2,1.37,3.065
-Oud Wood,Tom Ford,niche,4.29,1.541,2.785
+Lost Cherry,Tom Ford,niche,4.07,0.78,5.216
+Black Orchid,Tom Ford,niche,3.89,1.018,3.871
+Fiero,Xerjoff,niche,4.21,1.156,3.64
+Tuscan Leather,Tom Ford,niche,4.26,1.221,3.49
+Verde Accento,Xerjoff,niche,4.2,1.365,3.077
+Oud Wood,Tom Ford,niche,4.29,1.534,2.796
