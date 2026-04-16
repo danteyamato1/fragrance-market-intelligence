@@ -1,10 +1,11 @@
 name,brand,price_eur_usa,price_eur_uae,abs_gap_eur,abs_gap_pct,cheaper_in
 Wind Flowers,Creed,393.7,7.17,386.53,5390.9,UAE
 Millesime Imperial,Creed,31.67,282.92,251.25,793.3,USA
+Saffron Oud,Arabian Oud,161.29,23.77,137.52,578.5,UAE
 Fahrenheit,Dior,85.59,233.52,147.93,172.8,USA
 Pour Femme Dylan Blue,Versace,108.82,46.61,62.21,133.5,UAE
-L'Aventure Knight,Al Haramain,26.42,58.26,31.84,120.5,USA
 L'Aventure,Al Haramain,26.42,58.26,31.84,120.5,USA
+L'Aventure Knight,Al Haramain,26.42,58.26,31.84,120.5,USA
 Acqua di Gio,Giorgio Armani,102.7,50.11,52.59,104.9,UAE
 Invictus,Rabanne,134.37,67.35,67.02,99.5,UAE
 Sauvage Elixir,Dior,148.71,78.77,69.94,88.8,UAE
@@ -17,6 +18,7 @@ Le Male,Jean Paul Gaultier,66.48,97.65,31.17,46.9,USA
 La Nuit de l'Homme,Yves Saint Laurent,62.97,89.2,26.23,41.7,USA
 Tobacco Vanille,Tom Ford,124.1,174.9,50.8,40.9,USA
 Royal Blend Bourbon,French Avenue,41.51,29.6,11.91,40.2,UAE
+Eros,Versace,67.05,48.24,18.81,39.0,UAE
 Chanel No 5 Eau Premiere,Chanel,178.88,129.81,49.07,37.8,UAE
 Dior Homme Intense 2025,Dior,150.12,109.3,40.82,37.3,UAE
 Supremacy Gold,Afnan,29.95,22.61,7.34,32.5,UAE
