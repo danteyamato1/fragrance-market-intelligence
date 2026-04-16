@@ -21,16 +21,11 @@ CHROME_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0.0.0 Safari/5
 MIN_DELAY = 5
 MAX_DELAY = 10
 
-
-# ================= CLEAN ================= #
-
 def clean_price_text(text):
     if not text:
         return text
     return text.replace("\xa0", " ").replace("Â", "").strip()
 
-
-# ================= SIZE ================= #
 
 def oz_to_ml(oz):
     return oz * 29.5735
@@ -69,8 +64,6 @@ def ml_to_oz_string(ml):
     return mapping.get(ml)
 
 
-# ================= VARIANT ================= #
-
 VARIANT_MAP = {
     "eau de toilette": "edt",
     "edt": "edt",
@@ -88,8 +81,6 @@ def extract_variant(text):
             return v
     return None
 
-
-# ================= MATCHING ================= #
 
 def build_product_struct(product, query):
     size_match = re.search(r"(\d+)\s*(ml|oz)", query.lower())
@@ -120,8 +111,6 @@ def is_strong_match(title, product):
 
     return True
 
-
-# ================= PLAYWRIGHT ================= #
 
 def _start_browser():
     from playwright.sync_api import sync_playwright
@@ -177,11 +166,9 @@ def _fetch(page, url):
         return None
 
 
-# ================= PRICE EXTRACTION ================= #
-
 def extract_price(card):
 
-    # 🟢 1. STRONGEST: Look for "Price, product page" anywhere in card
+
     text = card.get_text(" ", strip=True)
 
     if "Price, product page" in text:
@@ -189,31 +176,26 @@ def extract_price(card):
         if m:
             return m.group(1)
 
-    # 🟢 2. Primary visible price block (Buy Box equivalent)
     price_block = card.select_one(".a-price")
 
     if price_block:
         price_text = price_block.get_text(" ", strip=True)
 
-        # Avoid grabbing "per ounce" etc.
         m = re.search(r"^\$\s?\d[\d,\.]*", price_text)
         if m:
             return m.group(0)
 
-    # 🔴 3. Explicitly IGNORE "More Buying Choices" unless nothing else exists
     if "More Buying Choices" in text and "Price, product page" not in text:
         m = re.search(r"\$\s?\d[\d,\.]*\s*\(\d+\s+new offers\)", text)
         if m:
-            # only use if nothing else found
+
             fallback = re.search(r"\$\s?\d[\d,\.]*", m.group(0))
             return fallback.group(0) if fallback else None
 
-    # 🟡 4. UAE fallback
     m = re.search(r"(AED\s?\d[\d,\.]*)", text)
     if m:
         return m.group(1)
 
-    # 🟡 5. Final fallback
     m = re.search(r"(\$\s?\d[\d,\.]*)", text)
     if m:
         return m.group(1)
@@ -229,9 +211,6 @@ def normalize_price(price):
 
     m = re.search(r"(AED|\$)\s?(\d[\d,\.]*)", price)
     return f"{m.group(1)}{m.group(2)}" if m else price
-
-
-# ================= SCRAPER ================= #
 
 def scrape_one(page, query, product, site_key, scrape_date):
 
@@ -259,7 +238,6 @@ def scrape_one(page, query, product, site_key, scrape_date):
 
     best_card = None
 
-    # strong match
     for card in cards[:15]:
         title_el = card.select_one("h2")
         if not title_el:
@@ -271,7 +249,6 @@ def scrape_one(page, query, product, site_key, scrape_date):
             best_card = card
             break
 
-    # fallback
     if not best_card:
         for card in cards[:5]:
             txt = card.get_text(" ", strip=True).lower()
@@ -302,8 +279,6 @@ def extract_data(card, product, site_key, scrape_date, url):
         "availability": "in_stock" if price else "unavailable",
     }
 
-
-# ================= MAIN ================= #
 
 def scrape_all(products, scrape_date, limit=None):
     products = products[:limit] if limit else products
@@ -341,8 +316,6 @@ def scrape_all(products, scrape_date, limit=None):
     return results
 
 
-# ================= SAVE ================= #
-
 def save_raw(data, path="raw_data/amazon_raw.csv"):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
@@ -353,9 +326,6 @@ def save_raw(data, path="raw_data/amazon_raw.csv"):
     logger.info(f"Saved {len(df)} rows → {path}")
 
     return df
-
-
-# ================= CLI ================= #
 
 if __name__ == "__main__":
     with open("products.json") as f:
