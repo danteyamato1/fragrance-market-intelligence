@@ -2,13 +2,13 @@ name: Daily Fragrance Scrape
 
 on:
   schedule:
-    - cron: "0 6 * * *"    # 06:00 UTC every day
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       mode:
         description: "Pipeline mode"
         required: true
-        default: "fragrantica-only"
+        default: "full"
         type: choice
         options:
           - fragrantica-only
@@ -49,12 +49,17 @@ jobs:
 
       - name: Run pipeline (scrape → clean → features → DB → analysis)
         run: |
-          MODE="${{ github.event.inputs.mode || 'fragrantica-only' }}"
+          MODE="${{ github.event.inputs.mode || 'full' }}"
           case "$MODE" in
             test)             make scrape-test ;;
-            fragrantica-only) make scrape-frag ;;
-            amazon-only)      make scrape-amz ;;
-            full|*)           make scrape ;;
+            fragrantica-only) make scrape-fragrantica ;;
+            amazon-only)      make scrape-amazon ;;
+            full)             make scrape ;;
+            *)
+              echo "ERROR: Unknown mode '$MODE'"
+              echo "Valid modes: test, fragrantica-only, amazon-only, full"
+              exit 1
+              ;;
           esac
 
       - name: Publish report to GitHub Pages
@@ -76,7 +81,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add raw_data/*.csv cleaned_data/*.csv *.db fx_cache.json docs/ 2>/dev/null || true
+          git add raw_data/*.csv cleaned_data/*.csv *.db fragrance_market.db fx_cache.json docs/ 2>/dev/null || true
 
           if git diff --staged --quiet; then
             echo "No new data to commit"
@@ -98,3 +103,13 @@ jobs:
 
           echo "Push failed after 3 attempts"
           exit 1
+
+      - name: Upload artefacts (for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-${{ github.run_id }}
+          path: |
+            cleaned_data/
+            fragrance_market.db
+          retention-days: 14
