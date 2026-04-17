@@ -1,31 +1,31 @@
 name,brand,brand_origin,rating,price_per_ml,value_score
-Tres Nuit,Armaf,arabic,4.13,0.184,22.554
-Detour Noir,Al Haramain,arabic,4.29,0.204,21.112
-Fakhar Black,Lattafa,arabic,4.23,0.204,20.739
-Yara,Lattafa,arabic,3.97,0.204,19.586
-Hunter Intense,Armaf,arabic,4.26,0.218,19.521
-Legesi Homme,Armaf,arabic,4.37,0.228,19.178
+Tres Nuit,Armaf,arabic,4.13,0.184,22.539
+Detour Noir,Al Haramain,arabic,4.29,0.2,21.582
+Fakhar Black,Lattafa,arabic,4.23,0.204,20.753
+Legesi Homme,Armaf,arabic,4.37,0.219,20.071
+Hunter Intense,Armaf,arabic,4.26,0.219,19.495
+Yara,Lattafa,arabic,3.97,0.208,19.209
 Qasamat Mohraf,Rasasi,arabic,4.14,0.222,18.607
-Hawas Ice,Rasasi,arabic,4.434,0.253,17.844
-Hawas for Him,Rasasi,arabic,4.317,0.248,17.657
-Badee Al Oud Amethyst,Lattafa,arabic,4.04,0.229,17.609
-Bright Crystal,Versace,designer,3.74,0.448,8.355
-Eros,Versace,designer,4.07,0.527,7.88
-Phantom Parfum,Rabanne,designer,3.91,0.574,6.817
-Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.719,5.935
-Acqua di Gio,Giorgio Armani,designer,4.13,0.776,5.919
-Armani Code Parfum,Giorgio Armani,designer,4.41,0.761,5.795
+Hawas for Him,Rasasi,arabic,4.318,0.247,17.79
+Badee Al Oud Amethyst,Lattafa,arabic,4.04,0.229,17.621
+Hawas Black,Rasasi,arabic,4.26,0.247,17.554
+Bright Crystal,Versace,designer,3.74,0.448,8.361
+Eros,Versace,designer,4.07,0.543,7.683
+Phantom Parfum,Rabanne,designer,3.91,0.574,6.808
+Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.719,5.939
+Acqua di Gio,Giorgio Armani,designer,4.13,0.778,5.892
+Pour Femme Dylan Blue,Versace,designer,3.78,0.773,5.824
+Armani Code Parfum,Giorgio Armani,designer,4.41,0.76,5.8
 Classique,Jean Paul Gaultier,designer,3.92,0.69,5.686
-La Nuit de l'Homme,Yves Saint Laurent,designer,4.45,0.816,5.569
-Invictus,Rabanne,designer,3.8,0.768,5.417
-Pour Femme Dylan Blue,Versace,designer,3.78,0.835,5.353
-Wind Flowers,Creed,niche,3.61,1.993,25.777
-Royal Oud,Creed,niche,4.36,0.357,12.197
-Millesime Imperial,Creed,niche,4.23,2.971,7.091
+Invictus,Rabanne,designer,3.8,0.733,5.648
+La Nuit de l'Homme,Yves Saint Laurent,designer,4.45,0.827,5.477
+Wind Flowers,Creed,niche,3.61,1.992,25.795
+Royal Oud,Creed,niche,4.36,0.357,12.206
+Millesime Imperial,Creed,niche,4.23,2.969,7.096
 Aventus Cologne,Creed,niche,4.33,0.685,6.325
-Lost Cherry,Tom Ford,niche,4.07,0.778,5.232
-Black Orchid,Tom Ford,niche,3.89,1.017,3.876
-Fiero,Xerjoff,niche,4.21,1.155,3.645
-Tuscan Leather,Tom Ford,niche,4.26,1.215,3.507
-Oud Wood,Tom Ford,niche,4.29,1.532,2.8
-1888,Xerjoff,niche,4.18,1.851,2.582
+Lost Cherry,Tom Ford,niche,4.07,0.992,4.546
+Black Orchid,Tom Ford,niche,3.89,1.016,3.879
+Fiero,Xerjoff,niche,4.21,1.154,3.648
+Tuscan Leather,Tom Ford,niche,4.26,1.205,3.537
+Oud Wood,Tom Ford,niche,4.29,1.531,2.802
+1888,Xerjoff,niche,4.18,1.832,2.626
