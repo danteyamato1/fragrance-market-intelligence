@@ -1,31 +1,31 @@
 name,brand,brand_origin,rating,price_per_ml,value_score
 Opulent Oud,Lattafa,arabic,4.009,0.156,25.709
-Tres Nuit,Armaf,arabic,4.125,0.181,22.902
-Detour Noir,Al Haramain,arabic,4.29,0.19,22.573
+Tres Nuit,Armaf,arabic,4.125,0.181,22.872
+Detour Noir,Al Haramain,arabic,4.29,0.19,22.574
 Fakhar Black,Lattafa,arabic,4.225,0.206,20.553
-Legesi Homme,Armaf,arabic,4.365,0.227,19.256
+Legesi Homme,Armaf,arabic,4.365,0.227,19.26
 Yara,Lattafa,arabic,3.969,0.213,18.665
-Hunter Intense,Armaf,arabic,4.26,0.231,18.455
-Hawas Ice,Rasasi,arabic,4.431,0.247,18.33
-Hawas Black,Rasasi,arabic,4.253,0.239,18.156
-Egra Men,Rasasi,arabic,4.013,0.228,18.142
+Hunter Intense,Armaf,arabic,4.26,0.232,18.413
+Hawas Ice,Rasasi,arabic,4.431,0.247,18.312
+Egra Men,Rasasi,arabic,4.013,0.227,18.163
+Hawas Black,Rasasi,arabic,4.253,0.239,18.133
 Explorer,Montblanc,designer,4.24,0.344,12.337
-Bright Crystal,Versace,designer,3.74,0.45,8.333
+Bright Crystal,Versace,designer,3.74,0.449,8.341
 CK One,Calvin Klein,designer,3.82,0.498,7.677
-Eros,Versace,designer,4.065,0.59,7.107
+Eros,Versace,designer,4.065,0.592,7.083
 Phantom Parfum,Rabanne,designer,3.912,0.585,6.693
-Acqua di Gio,Giorgio Armani,designer,4.13,0.755,6.439
 Pour Femme Dylan Blue,Versace,designer,3.78,0.675,6.378
+Acqua di Gio,Giorgio Armani,designer,4.13,0.777,6.364
 Classique,Jean Paul Gaultier,designer,3.92,0.69,5.686
 Armani Code Parfum,Giorgio Armani,designer,4.41,0.792,5.614
-Invictus,Rabanne,designer,3.8,0.83,5.345
-Wind Flowers,Creed,niche,3.612,1.547,32.133
-Royal Oud,Creed,niche,4.359,0.214,31.566
+Invictus,Rabanne,designer,3.8,0.834,5.315
+Wind Flowers,Creed,niche,3.612,1.598,31.482
+Royal Oud,Creed,niche,4.359,0.218,31.051
 Aventus Cologne,Creed,niche,4.33,0.685,6.325
-Lost Cherry,Tom Ford,niche,4.07,0.949,4.791
-Black Orchid,Tom Ford,niche,3.89,1.065,3.861
-Tuscan Leather,Tom Ford,niche,4.26,1.15,3.719
+Lost Cherry,Tom Ford,niche,4.07,0.942,4.813
+Black Orchid,Tom Ford,niche,3.89,1.073,3.839
+Tuscan Leather,Tom Ford,niche,4.26,1.146,3.731
 Millesime Imperial,Creed,niche,4.23,4.346,3.705
 Fiero,Xerjoff,niche,4.215,1.205,3.592
-Oud Wood,Tom Ford,niche,4.29,1.447,2.989
-1888,Xerjoff,niche,4.18,1.7,2.972
+Oud Wood,Tom Ford,niche,4.29,1.441,3.002
+1888,Xerjoff,niche,4.18,1.712,2.952
