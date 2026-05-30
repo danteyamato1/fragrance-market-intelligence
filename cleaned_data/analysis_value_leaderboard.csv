@@ -1,31 +1,31 @@
 name,brand,brand_origin,rating,price_per_ml,value_score
 Opulent Oud,Lattafa,arabic,4.007,0.156,25.665
-Tres Nuit,Armaf,arabic,4.125,0.182,22.739
-Detour Noir,Al Haramain,arabic,4.29,0.19,22.675
+Tres Nuit,Armaf,arabic,4.124,0.182,22.736
+Detour Noir,Al Haramain,arabic,4.29,0.189,22.688
 Fakhar Black,Lattafa,arabic,4.224,0.203,20.787
-Legesi Homme,Armaf,arabic,4.366,0.238,18.593
-Hawas Ice,Rasasi,arabic,4.43,0.245,18.425
-Egra Men,Rasasi,arabic,4.012,0.225,18.308
-Hawas Black,Rasasi,arabic,4.253,0.238,18.236
-Hunter Intense,Armaf,arabic,4.26,0.235,18.162
-Hawas for Him,Rasasi,arabic,4.315,0.244,18.016
+Legesi Homme,Armaf,arabic,4.366,0.238,18.549
+Hawas Ice,Rasasi,arabic,4.43,0.245,18.458
+Egra Men,Rasasi,arabic,4.012,0.224,18.331
+Hawas Black,Rasasi,arabic,4.253,0.237,18.251
+Hunter Intense,Armaf,arabic,4.26,0.236,18.135
+Hawas for Him,Rasasi,arabic,4.315,0.245,18.002
 Explorer,Montblanc,designer,4.24,0.447,11.248
-Bright Crystal,Versace,designer,3.74,0.448,8.363
+Bright Crystal,Versace,designer,3.74,0.448,8.362
 CK One,Calvin Klein,designer,3.82,0.498,7.677
-Eros,Versace,designer,4.064,0.596,7.032
-Phantom Parfum,Rabanne,designer,3.912,0.586,6.678
+Eros,Versace,designer,4.064,0.597,7.03
+Phantom Parfum,Rabanne,designer,3.912,0.588,6.662
 Pour Femme Dylan Blue,Versace,designer,3.78,0.675,6.378
-Acqua di Gio,Giorgio Armani,designer,4.13,0.807,6.184
+Acqua di Gio,Giorgio Armani,designer,4.13,0.811,6.163
 Classique,Jean Paul Gaultier,designer,3.92,0.69,5.686
-Armani Code Parfum,Giorgio Armani,designer,4.41,0.803,5.568
-Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.82,5.266
-Royal Oud,Creed,niche,4.358,0.234,28.88
-Wind Flowers,Creed,niche,3.612,1.828,28.506
+Armani Code Parfum,Giorgio Armani,designer,4.41,0.802,5.575
+Scandal Pour Homme,Jean Paul Gaultier,designer,4.27,0.822,5.248
+Royal Oud,Creed,niche,4.357,0.237,28.515
+Wind Flowers,Creed,niche,3.612,1.866,28.013
 Aventus Cologne,Creed,niche,4.33,0.685,6.325
-Lost Cherry,Tom Ford,niche,4.07,0.904,4.933
-Tuscan Leather,Tom Ford,niche,4.26,1.138,3.758
-Black Orchid,Tom Ford,niche,3.89,1.103,3.753
-Millesime Imperial,Creed,niche,4.23,4.382,3.627
-Fiero,Xerjoff,niche,4.215,1.202,3.586
-Oud Wood,Tom Ford,niche,4.29,1.44,3.025
-1888,Xerjoff,niche,4.18,1.745,2.888
+Lost Cherry,Tom Ford,niche,4.07,0.9,4.947
+Tuscan Leather,Tom Ford,niche,4.26,1.139,3.754
+Black Orchid,Tom Ford,niche,3.89,1.107,3.744
+Fiero,Xerjoff,niche,4.215,1.202,3.585
+Millesime Imperial,Creed,niche,4.23,4.415,3.553
+Oud Wood,Tom Ford,niche,4.29,1.463,2.994
+1888,Xerjoff,niche,4.18,1.746,2.884
