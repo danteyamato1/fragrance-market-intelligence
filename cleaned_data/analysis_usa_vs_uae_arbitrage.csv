@@ -1,5 +1,6 @@
 name,brand,price_eur_usa,price_eur_uae,abs_gap_eur,abs_gap_pct,cheaper_in
 Wind Flowers,Creed,393.7,7.17,386.53,5390.9,UAE
+Tuscan Leather,Tom Ford,123.97,9.36,114.61,1224.5,UAE
 Millesime Imperial,Creed,31.67,282.92,251.25,793.3,USA
 Saffron Oud,Arabian Oud,161.29,23.77,137.52,578.5,UAE
 Royal Oud,Creed,35.94,9.23,26.71,289.4,UAE
@@ -8,8 +9,8 @@ Fahrenheit,Dior,85.59,233.52,147.93,172.8,USA
 Egra Men,Rasasi,25.16,9.77,15.39,157.5,UAE
 Raghba,Lattafa,15.25,36.37,21.12,138.5,USA
 Pour Femme Dylan Blue,Versace,108.82,46.61,62.21,133.5,UAE
-L'Aventure,Al Haramain,26.42,58.26,31.84,120.5,USA
 L'Aventure Knight,Al Haramain,26.42,58.26,31.84,120.5,USA
+L'Aventure,Al Haramain,26.42,58.26,31.84,120.5,USA
 My Way,Giorgio Armani,35.89,74.34,38.45,107.1,USA
 Acqua di Gio,Giorgio Armani,102.7,50.11,52.59,104.9,UAE
 Invictus,Rabanne,134.37,67.35,67.02,99.5,UAE
